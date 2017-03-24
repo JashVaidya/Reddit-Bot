@@ -1,89 +1,62 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import praw
+import config
+import time
+import os
+import requests
 
-# C extensions
-*.so
+def bot_login():
+	print ("Logging in...")
+	r = praw.Reddit(username = config.username,
+			password = config.password,
+			client_id = config.client_id,
+			client_secret = config.client_secret,
+			user_agent = "BrolyDisturbed's joke comment responder v0.1")
+	print ("Logged in!")
 
-# Distribution / packaging
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+	return r
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+def run_bot(r, comments_replied_to):
+	print ("Obtaining 10 comments...")
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+	for comment in r.subreddit('test').comments(limit=10):
+		if "!joke" in comment.body and comment.id not in comments_replied_to and comment.author != r.user.me():
+			print ("String with \"!joke\" found in comment " + comment.id)
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*,cover
-.hypothesis/
+			comment_reply = "You requested a Chuck Norris joke! Here it is:\n\n"
 
-# Translations
-*.mo
-*.pot
+			joke = requests.get('http://api.icndb.com/jokes/random').json()['value']['joke']
 
-# Django stuff:
-*.log
-local_settings.py
+			comment_reply += ">" + joke
 
-# Flask stuff:
-instance/
-.webassets-cache
+			comment_reply += "\n\nThis joke came from [ICNDB.com](http://icndb.com)."
 
-# Scrapy stuff:
-.scrapy
 
-# Sphinx documentation
-docs/_build/
+			comment.reply(comment_reply)
+			print ("Replied to comment " + comment.id)
 
-# PyBuilder
-target/
+			comments_replied_to.append(comment.id)
 
-# IPython Notebook
-.ipynb_checkpoints
+			with open("comments_replied_to.txt", "a") as f:
+				f.write(comment.id + "\n")
 
-# pyenv
-.python-version
+	print("Sleeping for 10 seconds...")		
+	#sleep for 10 seconds...
+	time.sleep(10)
 
-# celery beat schedule file
-celerybeat-schedule
 
-# dotenv
-.env
+def get_saved_comments():
+	if not os.path.isfile("comments_replied_to.txt"):
+		comments_replied_to = []
+	else:	
+		with open("comments_replied_to.txt", "r") as f:
+			comments_replied_to = f.read()
+			comments_replied_to = comments_replied_to.split("\n")
 
-# virtualenv
-venv/
-ENV/
+	return comments_replied_to
 
-# Spyder project settings
-.spyderproject
+r = bot_login()
+comments_replied_to = get_saved_comments()
+print (comments_replied_to)
 
-# Rope project settings
-.ropeproject
+while True:
+	run_bot(r, comments_replied_to)
