@@ -10,7 +10,7 @@ def bot_login():
 			password = config.password,
 			client_id = config.client_id,
 			client_secret = config.client_secret,
-			user_agent = "BrolyDisturbed's joke comment responder v0.1")
+			user_agent = "username's joke comment responder v0.1")
 	print ("Logged in!")
 
 	return r
